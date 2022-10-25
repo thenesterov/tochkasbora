@@ -9,6 +9,11 @@ readme = "README.md"
 python = "^3.10"
 fastapi = "^0.85.0"
 uvicorn = "^0.18.3"
+SQLAlchemy = "^1.4.42"
+passlib = "^1.7.4"
+python-jose = "^3.3.0"
+python-multipart = "^0.0.5"
+pydantic = {extras = ["email"], version = "^1.10.2"}
 
 
 [build-system]

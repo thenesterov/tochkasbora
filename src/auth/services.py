@@ -19,27 +19,34 @@ from ..settings import settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
+class DatabaseOperations:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get_user(self, username: str | None = None, email: EmailStr | None = None) -> User | None:
+        if not username and not email:
+            return None
+        try:
+            if username:
+                user = self.session.query(User).filter(User.username == username).one()
+            elif email:
+                user = self.session.query(User).filter(User.email == username).one()
+        except NoResultFound:
+            return None
+
+        return user
+
+    def add(self, object):
+        self.session.add(object)
+        self.session.commit()
+
+# TODO to setting EXP time
 class UserOperations:
     def __init__(self, session: Session = Depends(get_database)):
         self.session = session
+        self.database_operations = DatabaseOperations(self.session)
 
-    # TODO Replace type of email
-    def get_user_by_email(self, email: EmailStr) -> User | None:
-        try:
-            user = self.session.query(User).filter(User.email == email).one()
-        except NoResultFound:
-            return None
-
-        return user
-
-    def get_user_by_username(self, username: str) -> User | None:
-        try:
-            user = self.session.query(User).filter(User.username == username).one()
-        except NoResultFound:
-            return None
-
-        return user
-
+    # TODO if email have been registered, then send an error
     def user_registration(self, user: UserCreate):
         new_user = User(
             email=user.email,
@@ -47,24 +54,28 @@ class UserOperations:
             hashed_password=get_password_hash(user.password)
         )
 
-        self.session.add(new_user)
-        self.session.commit()
+        self.database_operations.add(new_user)
 
-        return 200
+        return self.create_access_token({"sub": new_user.username})  # TODO return a dict with "access_token" and "refresh_token" fields
 
-    def get_user(self, username: str):
-        user = self.get_user_by_username(username)
+    # ???
+    def get_user(self, username: str | None = None, email: EmailStr | None = None):
+        if username:
+            user = self.database_operations.get_user(username=username)
+        if email:
+            user = self.database_operations.get_user(email=email)
         if user:
             user_dict = user.__dict__
             return schemas.UserInDB(**user_dict)
 
     def authenticate_user(self, username: str, password: str):
-        user = self.get_user(username)
+        user = self.get_user(username=username)
         if not user:
             return False
         if not verify_password(password, user.hashed_password):
             return False
-        return user
+
+        return self.create_access_token(data={'sub': user.username})
 
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()
@@ -76,7 +87,7 @@ class UserOperations:
         encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
         return encoded_jwt
 
-    def get_current_user(self, token: str = Depends(oauth2_scheme)):
+    def validate_access_token(self, token: str = Depends(oauth2_scheme)):
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -84,13 +95,7 @@ class UserOperations:
         )
         try:
             payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-            username: str = payload.get("sub")
-            if username is None:
-                raise credentials_exception
-            token_data = TokenData(username=username)
         except JWTError:
             raise credentials_exception
-        user = self.get_user(username=token_data.username)
-        if user is None:
-            raise credentials_exception
-        return user
+        else:
+            return payload.get('exp') > datetime.utcnow().timestamp()

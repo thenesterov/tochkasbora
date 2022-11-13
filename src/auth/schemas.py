@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 
 
+# TODO rename
+# TODO add Optional fields for services
 class UserCreate(BaseModel):
     email: EmailStr
     username: str

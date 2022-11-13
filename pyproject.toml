@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "connectnow"
+name = "tochkasbora"
 version = "0.1.0"
 description = ""
 authors = ["thenesterov <thenesterov@proton.me>"]

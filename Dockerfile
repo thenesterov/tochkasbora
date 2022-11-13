@@ -12,9 +12,9 @@ EXPOSE 8000
 
 RUN pip install poetry
 
-RUN mkdir connectnow/
-COPY . connectnow/
-WORKDIR connectnow/
+RUN mkdir tochkasbora/
+COPY . tochkasbora/
+WORKDIR tochkasbora/
 
 RUN poetry install
 

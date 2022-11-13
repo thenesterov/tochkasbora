@@ -1,7 +1,7 @@
-# ConnectNow
-is a project for conducting webinars and master classes
+# Tochka sbora
+Platform for offline and online events
 
 ## How to run?
 ```commandline
-docker run --rm -p 8000:8000 connectnow
+docker build -t tochkasbora . && docker run --rm -p 8000:8000 tochkasbora
 ```

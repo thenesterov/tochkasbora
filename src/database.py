@@ -5,7 +5,7 @@ from .settings import settings
 
 # TODO добавить путь в переменные окружения
 engine = create_engine(
-    'sqlite:////home/worker/PycharmProjects/connectnow/sqlite3.db',
+    settings.database_url,
     connect_args={'check_same_thread': False}
 )
 

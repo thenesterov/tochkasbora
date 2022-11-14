@@ -16,7 +16,7 @@ from ..database import get_database
 from ..settings import settings
 
 # TODO Move to routers.py
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 
 class DatabaseOperations:

@@ -1,16 +1,16 @@
+from datetime import datetime, timedelta
+
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import EmailStr
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
-
+from pydantic import EmailStr
 from starlette import status
 
 from . import schemas
 from .models import User
-from .schemas import UserCreate, TokenData
+from .schemas import UserCreate
 from .utils import *
 from ..database import get_database
 from ..settings import settings
@@ -36,11 +36,37 @@ class DatabaseOperations:
 
         return user
 
-    def add(self, object):
-        self.session.add(object)
+    def add(self, sqlalchemy_object):
+        self.session.add(sqlalchemy_object)
         self.session.commit()
 
+
 # TODO to setting EXP time
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(seconds=settings.jwt_expiration)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return encoded_jwt
+
+
+def validate_access_token(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    except JWTError:
+        raise credentials_exception
+    else:
+        return payload.get('exp') > datetime.utcnow().timestamp()
+
+
 class UserOperations:
     def __init__(self, session: Session = Depends(get_database)):
         self.session = session
@@ -56,10 +82,12 @@ class UserOperations:
 
         self.database_operations.add(new_user)
 
-        return self.create_access_token({"sub": new_user.username})  # TODO return a dict with "access_token" and "refresh_token" fields
+        return create_access_token({"sub": new_user.username})  # TODO return a dict with "access_token" and "refresh_token" fields
 
     # ???
     def get_user(self, username: str | None = None, email: EmailStr | None = None):
+        user = None
+
         if username:
             user = self.database_operations.get_user(username=username)
         if email:
@@ -70,32 +98,10 @@ class UserOperations:
 
     def authenticate_user(self, username: str, password: str):
         user = self.get_user(username=username)
+
         if not user:
             return False
         if not verify_password(password, user.hashed_password):
             return False
 
-        return self.create_access_token(data={'sub': user.username})
-
-    def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(seconds=settings.jwt_expiration)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
-        return encoded_jwt
-
-    def validate_access_token(self, token: str = Depends(oauth2_scheme)):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-        except JWTError:
-            raise credentials_exception
-        else:
-            return payload.get('exp') > datetime.utcnow().timestamp()
+        return create_access_token(data={'sub': user.username})

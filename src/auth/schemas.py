@@ -15,7 +15,7 @@ class UserBase(BaseModel):
     username: str
 
 
-#TODO Изменить тип dict на тип токена
+# TODO Изменить тип dict на тип токена
 class User(UserBase):
     token: dict = {}
 

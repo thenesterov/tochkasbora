@@ -1,14 +1,9 @@
-import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
 from .schemas import *
-from ..settings import settings
-from ..database import get_database, Session
-
-from .services import UserOperations, DatabaseOperations
+from .services import UserOperations, validate_access_token
 
 auth_router = APIRouter(
     prefix='/auth'
@@ -42,14 +37,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    #access_token_expires = datetime.timedelta(seconds=settings.jwt_expiration)
-    #access_token = user_operations.create_access_token(`
-    #    data={"sub": user.username}, expires_delta=access_token_expires
-    #)
-    #return {"access_token": access_token, "token_type": "bearer"}
+
     return {"access_token": user, "token_type": "bearer"}
 
 
 @auth_router.get('/is-auth')
-def is_auth(authed=Depends(UserOperations().validate_access_token)):
+def is_auth(authed=Depends(validate_access_token)):
     return "ok"

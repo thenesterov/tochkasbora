@@ -1,5 +1,6 @@
 from pydantic import BaseSettings
 
+
 # TODO: add jwt secret to .env file
 class Settings(BaseSettings):
     database_url: str = 'sqlite:///database.sqlite3'

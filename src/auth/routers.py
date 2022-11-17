@@ -11,7 +11,7 @@ auth_router = APIRouter(
 
 
 @auth_router.post('/sign-up')
-def sign_up(user: UserCreate, user_operation: UserOperations = Depends()):
+def sign_up(user: UserAuth, user_operation: UserOperations = Depends()):
     if user_operation.get_user(email=user.email):
         raise HTTPException(status_code=400, detail='Email already registered')
     elif user_operation.get_user(username=user.username):
@@ -20,7 +20,7 @@ def sign_up(user: UserCreate, user_operation: UserOperations = Depends()):
 
 
 @auth_router.post('/sign-in')
-def sign_in(user: UserCreate, user_operation: UserOperations = Depends()):
+def sign_in(user: UserAuth, user_operation: UserOperations = Depends()):
     jwt = user_operation.authenticate_user(username=user.username, password=user.password)
     if jwt:
         return jwt

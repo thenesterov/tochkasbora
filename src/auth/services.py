@@ -10,13 +10,10 @@ from starlette import status
 
 from . import schemas
 from .models import User
-from .schemas import UserCreate
+from .schemas import UserAuth
 from .utils import *
 from ..database import get_database
 from ..settings import settings
-
-# TODO Move to routers.py
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 
 class DatabaseOperations:
@@ -30,7 +27,7 @@ class DatabaseOperations:
             if username:
                 user = self.session.query(User).filter(User.username == username).one()
             elif email:
-                user = self.session.query(User).filter(User.email == username).one()
+                user = self.session.query(User).filter(User.email == email).one()
         except NoResultFound:
             return None
 
@@ -41,7 +38,6 @@ class DatabaseOperations:
         self.session.commit()
 
 
-# TODO to setting EXP time
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
@@ -53,7 +49,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def validate_access_token(token: str = Depends(oauth2_scheme)):
+def validate_access_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl='auth/token'))):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -72,8 +68,7 @@ class UserOperations:
         self.session = session
         self.database_operations = DatabaseOperations(self.session)
 
-    # TODO if email have been registered, then send an error
-    def user_registration(self, user: UserCreate):
+    def user_registration(self, user: UserAuth):
         new_user = User(
             email=user.email,
             username=user.username,
@@ -82,7 +77,10 @@ class UserOperations:
 
         self.database_operations.add(new_user)
 
-        return create_access_token({"sub": new_user.username})  # TODO return a dict with "access_token" and "refresh_token" fields
+        return {
+            'access_token': create_access_token({"sub": new_user.username}),
+            'refresh_token': ''
+        }
 
     # ???
     def get_user(self, username: str | None = None, email: EmailStr | None = None):
@@ -104,4 +102,7 @@ class UserOperations:
         if not verify_password(password, user.hashed_password):
             return False
 
-        return create_access_token(data={'sub': user.username})
+        return {
+            'access_token': create_access_token({'sub': user.username}),
+            'refresh_token': ''
+        }

@@ -6,7 +6,6 @@ from ..database import engine
 Base = declarative_base()
 
 
-# TODO Replace type of email
 class User(Base):
     __tablename__: str = 'users'
 

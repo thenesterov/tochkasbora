@@ -11,7 +11,7 @@ from starlette import status
 from . import schemas
 from .models import User
 from .schemas import UserAuth
-from .utils import *
+from .utils import get_password_hash, verify_password
 from ..database import get_database
 from ..settings import settings
 

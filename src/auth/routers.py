@@ -38,7 +38,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return {"access_token": user, "token_type": "bearer"}
+    return {"access_token": user["access_token"], "token_type": "bearer"}
 
 
 @auth_router.get('/is-auth')

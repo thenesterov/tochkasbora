@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .settings import settings
+from src.core.settings import settings
 
 # TODO добавить путь в переменные окружения
 engine = create_engine(

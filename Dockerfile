@@ -18,4 +18,4 @@ WORKDIR tochkasbora/
 
 RUN poetry install
 
-CMD ["poetry", "run", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]

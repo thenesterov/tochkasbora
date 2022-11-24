@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
-from ..database import engine
+from src.db.events import engine
 
 Base = declarative_base()
 

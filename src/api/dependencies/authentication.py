@@ -8,12 +8,11 @@ from jose import JWTError, jwt
 from pydantic import EmailStr
 from starlette import status
 
-from . import schemas
-from .models import User
-from .schemas import UserAuth
-from .utils import get_password_hash, verify_password
-from ..database import get_database
-from ..settings import settings
+from src.models.schemas.authentication import UserAuth, UserInDB
+from src.db.models.authenticate import User
+from src.services.authenticate import get_password_hash, verify_password
+from src.db.events import get_database
+from src.core.settings import settings
 
 
 class DatabaseOperations:
@@ -92,7 +91,7 @@ class UserOperations:
             user = self.database_operations.get_user(email=email)
         if user:
             user_dict = user.__dict__
-            return schemas.UserInDB(**user_dict)
+            return UserInDB(**user_dict)
 
     def authenticate_user(self, username: str, password: str):
         user = self.get_user(username=username)
